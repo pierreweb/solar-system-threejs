@@ -1,110 +1,33 @@
-# 🌌 3D Solar System – ThreeJs + IMCCE / Miriade
+# 🌌 Solar System in Three.js
 
-An interactive **3D web application** representing the **Solar System**, built with **ThreeJs**, using real astronomical ephemerides from **IMCCE / Miriade** to position planets accurately for a selected date.
+A rebuilt, lightweight Solar System simulation rendered directly with Three.js.
 
-This project allows users to visualize the Solar System in 3D and retrieve realistic planetary positions for a chosen date.
+## Highlights
 
----
+- 3D scene with the Sun and eight planets.
+- Earth includes a Moon orbit.
+- Orbit controls (drag to rotate, scroll to zoom).
+- Live simulation date with date picker.
+- Adjustable simulation speed in days per second.
+- Toggle orbit rings and planet labels.
+- Optional iframe host page for embedding.
 
-## 📸 Preview
+## Run locally
 
-![3D Solar System Preview](./images/systeme-solaire-preview.png)
+Because this project imports ES modules from a CDN, run it with a local web server:
 
----
-
-## ✨ Features
-
-- Interactive **3D Solar System** rendered in the browser
-- Select a **custom date**
-- Retrieve **real planetary positions** from the **IMCCE / Miriade** ephemeris service
-- Dynamically position planets along their orbits
-- Display:
-- ☀️ Sun
-- ☿ Mercury
-- ♀ Venus
-- 🌍 Earth
-- 🌙 Moon
-- ♂ Mars
-- ☄️ Asteroid belt + Ceres
-- ♃ Jupiter
-- ♄ Saturn
-- ♅ Uranus
-- ♆ Neptune
-- (Optional depending on version: Pluto)
-- Display **orbital paths**
-- Display **rotation axes**
-- Planet **billboard labels / indicators**
-- Animate:
-  - planetary self-rotation
-  - orbital revolution
-- Adjustable **animation speed**
-- Audio / music controls
-- Fullscreen mode
-- Interactive UI with sliders and control buttons
-
----
-
-## 🛠️ Technologies Used
-
-- **ThreeJs**
-- **JavaScript**
-- **HTML / CSS**
-- **Fetch API**
-- **IMCCE / Miriade ephemerides API**
-
----
-
-## 📁 Project Structure
-
-```text
-T:.
-|   favicon.ico
-|   favicon1.ico
-|   systeme_solaire.bin
-|   systeme_solaire.bin.xz
-|   systeme_solaire.css
-|   systeme_solaire.gltf
-|   systeme_solaire.gltf.xz
-|   systeme_solaire.html
-|   systeme_solaire.js
-|   systeme_solaire_iframe.html
-|   v3d.js
-|
-+---sons
-|       Robot_blip_2-Marianne_Gagnon-299056732.mp3
-|
-\---textures
-        2k_jupiter.jpg
-        2k_mars.jpg
-        2k_mercury.jpg
-        2k_moon.jpg
-        2k_neptune.jpg
-        2k_saturn.jpg
-        2k_stars.jpg
-        2k_sun.jpg
-        2k_uranus.jpg
-        2k_venus_atmosphere.jpg
-        3215-bump.jpg
-        3215.jpg
-        asteroides.png
-        Axe.png
-        Axe1.png
-        ceres.jpg
-        ceres.png
-        ceres_bump_map.jpg
-        jupiter.png
-        land_ocean_ice_cloud_2048.jpg
-        lune.png
-        mars.png
-        mercure.png
-        neptune.png
-        saturne.png
-        saturn_Saturn_Rings_1__John_van_Vliet.jpg
-        soleil.png
-        star_sky_hdri_spherical_map_by_kirriaa.jpg
-        terre.png
-        uranus.png
-        venus.png
+```bash
+python3 -m http.server 8080
 ```
 
-# solar-system-threejs
+Then open:
+
+- `http://localhost:8080/systeme_solaire.html`
+- or `http://localhost:8080/systeme_solaire_iframe.html`
+
+## Project files
+
+- `systeme_solaire.html` — main app shell and controls.
+- `systeme_solaire.css` — UI and overlay styling.
+- `systeme_solaire.js` — Three.js scene setup and simulation logic.
+- `systeme_solaire_iframe.html` — embed wrapper page.
