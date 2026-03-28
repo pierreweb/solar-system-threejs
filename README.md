@@ -1,6 +1,6 @@
-# 🌌 3D Solar System – Verge3D + IMCCE / Miriade
+# 🌌 3D Solar System – ThreeJs + IMCCE / Miriade
 
-An interactive **3D web application** representing the **Solar System**, built with **Verge3D**, using real astronomical ephemerides from **IMCCE / Miriade** to position planets accurately for a selected date.
+An interactive **3D web application** representing the **Solar System**, built with **ThreeJs**, using real astronomical ephemerides from **IMCCE / Miriade** to position planets accurately for a selected date.
 
 This project allows users to visualize the Solar System in 3D and retrieve realistic planetary positions for a chosen date.
 
@@ -46,7 +46,7 @@ This project allows users to visualize the Solar System in 3D and retrieve reali
 
 ## 🛠️ Technologies Used
 
-- **Verge3D**
+- **ThreeJs**
 - **JavaScript**
 - **HTML / CSS**
 - **Fetch API**
@@ -106,4 +106,5 @@ T:.
         uranus.png
         venus.png
 ```
+
 # solar-system-threejs

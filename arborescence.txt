@@ -1,0 +1,52 @@
+Structure du dossier pour le volume Seagate Expansion Drive
+Le numéro de série du volume est 7C82-377E
+T:.
+|   arborescence.txt
+|   favicon.ico
+|   favicon1.ico
+|   systeme_solaire.bin
+|   systeme_solaire.bin.xz
+|   systeme_solaire.css
+|   systeme_solaire.gltf
+|   systeme_solaire.gltf.xz
+|   systeme_solaire.html
+|   systeme_solaire.js
+|   systeme_solaire_iframe.html
+|   v3d.js
+|   
++---sons
+|       Robot_blip_2-Marianne_Gagnon-299056732.mp3
+|       
+\---textures
+        2k_jupiter.jpg
+        2k_mars.jpg
+        2k_mercury.jpg
+        2k_moon.jpg
+        2k_neptune.jpg
+        2k_saturn.jpg
+        2k_stars.jpg
+        2k_sun.jpg
+        2k_uranus.jpg
+        2k_venus_atmosphere.jpg
+        3215-bump.jpg
+        3215.jpg
+        asteroides.png
+        Axe.png
+        Axe1.png
+        ceres.jpg
+        ceres.png
+        ceres_bump_map.jpg
+        jupiter.png
+        land_ocean_ice_cloud_2048.jpg
+        lune.png
+        mars.png
+        mercure.png
+        neptune.png
+        saturne.png
+        saturn_Saturn_Rings_1__John_van_Vliet.jpg
+        soleil.png
+        star_sky_hdri_spherical_map_by_kirriaa.jpg
+        terre.png
+        uranus.png
+        venus.png
+        

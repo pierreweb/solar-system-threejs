@@ -1,0 +1,19 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Optional archives / temp
+
+*.zip
+*.bak
+
+
+# Logs
+*.log
+*.*copy
+
+#files
+*.bin
+*.xz
+*.gltf
+v3d.js

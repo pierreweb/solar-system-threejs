@@ -1,0 +1,421 @@
+< !DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Verge3D Application</title>
+    /x-icon" href="/favicon1.ico">
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <link rel="stylesheet" type="text/css" href="systeme_solaire.css" />
+    <meta name="generator" content="Verge3D 2.11.1" />
+  </head>
+
+  <body>
+    <div id="container"></div>
+    <!-- https: //www.w3schools.com/howto/howto_js_rangeslider.asp -->
+    <div class="slidercontainer" onclick="playSoundButtons()">
+      <div class="slidercontainerhorizontal">
+        <div style:background="red">Musique</div>
+        <div>
+          <input
+            type="range"
+            min="1"
+            max="5"
+            value="0"
+            class="slider"
+            id="myRange"
+          />
+        </div>
+        <div><var id="varMusique">1</var></div>
+      </div>
+      <div class="slidercontainerhorizontal">
+        <div>Son</div>
+        <div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            value="0"
+            class="slider"
+            id="myRange"
+          />
+        </div>
+        <div><var id="varSon">OFF</var></div>
+      </div>
+      <div class="slidercontainerhorizontal">
+        <div>Ecliptique</div>
+        <div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            value="0"
+            class="slider"
+            id="Ecliptique"
+          />
+        </div>
+        <div><var id="varEcliptique">OFF</var></div>
+      </div>
+      <div class="slidercontainerhorizontal">
+        <div>Orbites</div>
+        <div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            value="0"
+            class="slider"
+            id="Orbit"
+          />
+        </div>
+        <div><var id="varOrbites">OFF</var></div>
+      </div>
+      <div class="slidercontainerhorizontal">
+        <div>Animation</div>
+        <div>
+          <input
+            type="range"
+            min="1"
+            max="2"
+            value="1"
+            class="slider"
+            id="animationRevPlayPause"
+          />
+        </div>
+        <div><var id="varAnimationRev">PAUSE</var></div>
+      </div>
+      <div class="slidercontainerhorizontal">
+        <div>Vitesse</div>
+        <div>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value="1"
+            class="slider"
+            id="vitesseAnimations"
+          />
+        </div>
+        <div><var id="varVitesseAnimations">1</var></div>
+      </div>
+      <div class="slidercontainerhorizontal">
+        <div>FullScreen</div>
+        <div>
+          <input
+            type="range"
+            min="1"
+            max="2"
+            value="1"
+            class="slider"
+            id="myRange"
+          />
+        </div>
+        <div><var id="varFullScreen">OFF</var></div>
+      </div>
+      <!-- <div class="slidercontainerhorizontal">
+                <div>Ralenti</div>
+                <div><input type="range" min="1" max="2" value="1" class="slider" id="myRange"></div>
+                <div><var id="varFullScreen">OFF</var></div>
+        </div>
+        <div class="slidercontainerhorizontal">
+            <div>Camera_origine</div>
+            <div><input type="range" min="1" max="2" value="1" class="slider" id="myRange"></div>
+            <div><var id="varFullScreen">OFF</var></div>
+        </div>-->
+      <div class="slidercontainerhorizontal">
+        <div>Lights_Switch</div>
+        <div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            value="2"
+            class="slider"
+            id="lightsOffOn"
+          />
+        </div>
+        <div><var id="varLightsOffOn">ON</var></div>
+      </div>
+    </div>
+    <div class="dateinputslider">
+      <button id="modalButton">Date Picker</button>
+    </div>
+    <!--https: //www.w3schools.com/howto/tryit.asp?filename=tryhow_css_modal-->
+    < !--https: //www.w3schools.com/howto/howto_css_modals.asp-->
+    <div id="datePickerModal" class="modal">
+      <div>
+        <div>
+          <label for="dateinput">Veuillez saisir une date d'observation:</label>
+        </div>
+
+        <div><span class="close">&times; </span></div>
+      </div>
+      <div>
+        <div>
+          <input
+            type="date"
+            id="dateinput"
+            name="dateinput"
+            value="2018-07-22"
+          />
+        </div>
+        <div><button id="changeDate">Ok</button></div>
+      </div>
+    </div>
+    <div class="temps" id="date"></div>
+  </body>
+  <script>
+    /*gestion boutons et affichage html*/
+    var output = [];
+    var sliderValue = [];
+    var varAnimationRev = document.getElementById("varAnimationRev").innerText; //console.log(varAnimationRev);
+    var slider = document.getElementsByClassName("slidercontainer");
+    //console.log(slider);console.log(slider[0].children[0].children[1].textContent);console.log(slider[0].children.length);
+    for (var i = 0; i < slider[0].children.length; i++) {
+      output[i] = slider[0].children[i].children[2];
+      console.log(output[i]);
+      output[i].style.color = "yellow";
+      sliderValue[i] = slider[0].children[i].children[1].children[0];
+      console.log(sliderValue[i], i);
+    }
+
+    /*Conditional (Ternary) Operator var voteable = (age < 18) ? "Too young":"Old enough"; */
+    sliderValue[0].oninput = () => {
+      output[0].textContent = sliderValue[0].value;
+      playMusique(sliderValue[0].value);
+    };
+
+    sliderValue[1].oninput = () => {
+      output[1].textContent = sliderValue[1].value == 0 ? "OFF" : "ON";
+      muteAudio(sliderValue[1].value);
+    };
+
+    sliderValue[2].oninput = () =>
+      (output[2].textContent = sliderValue[2].value == 0 ? "OFF" : "ON");
+    sliderValue[3].oninput = () =>
+      (output[3].textContent = sliderValue[3].value == 0 ? "OFF" : "ON");
+    sliderValue[4].oninput = () =>
+      (output[4].textContent =
+        sliderValue[4].value == 1
+          ? ("PAUSE", (varAnimationRev = "PAUSE"))
+          : ("PLAY", (varAnimationRev = "PLAY")));
+    sliderValue[5].oninput = () =>
+      (output[5].textContent = varVitesseAnimations = sliderValue[5].value);
+
+    sliderValue[6].oninput = () => {
+      output[6].textContent =
+        sliderValue[6].value == 1
+          ? (closeFullscreen(), "OFF")
+          : (openFullscreen(), "ON");
+    };
+    sliderValue[7].oninput = () =>
+      (output[7].textContent = sliderValue[9].value == 0 ? "OFF" : "ON");
+
+    var varAnimationRev = document.getElementById("varAnimationRev").innerText;
+    console.log(varAnimationRev);
+    var varVitesseAnimations = document.getElementById(
+      "varVitesseAnimations",
+    ).innerText;
+    console.log(varVitesseAnimations);
+    var varLightsOffOn = document.getElementById("varLightsOffOn").innerText;
+    console.log(varLightsOffOn);
+
+    var outputDate = document.getElementById("date");
+    var d = new Date();
+    //je rajoute noop car date commence à 1 et tableau à 0
+    const mois = new Array(
+      "Janvier",
+      "Février",
+      "Mars",
+      "Avril",
+      "Mai",
+      "Juin",
+      "Juillet",
+      "Août",
+      "Septembre",
+      "Octobre",
+      "Novembre",
+      "Décembre",
+    );
+    const jours = new Array(
+      "Dimanche",
+      "Lundi",
+      "Mardi",
+      "Mercredi",
+      "Jeudi",
+      "Vendredi",
+      "Samedi",
+    );
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    //je met datenow dans le div temps id=date
+    //outputDate.innerHTML = days[d.getDay()] + '.' + d.getDate() + '.' + months[d.getMonth()] + '.' + d.getFullYear(); //d.toDateString();
+    outputDate.innerHTML =
+      jours[d.getDay()] +
+      "." +
+      d.getDate() +
+      "." +
+      mois[d.getMonth()] +
+      "." +
+      d.getFullYear(); //d.toDateString();
+    //je met date now dans le datepicker
+    document.getElementById("dateinput").value = new Date()
+      .toISOString()
+      .slice(0, 10);
+
+    //document.getElementById("dateinput").value = d.getDay().toString() + "/" + d.getMonth().toString + "/" + d.getFullYear().toString();
+    //alert(d.toISOString());
+    /* var dateControl = document.querySelector('input[type="date-input"]');//alert(dateControl);
+                
+                    dateControl.value = d.toISOString().slice(0,10);//"'"+d.getFullYear()+"-"+d.getMonth()+"-"+d.getDay()+"'";
+                   // dateControl.value = '2017-06-01'; */
+
+    /*-----------------gestion modal--------*/
+    // Get the modal
+    var modalDatePicker = document.getElementById("datePickerModal");
+    var btnModal = document.getElementById("modalButton"); // Get the button that opens the modal
+    var spanModal = document.getElementsByClassName("close")[0]; // Get the <span> element that closes the modal
+    const btnChangeDate = document.getElementById("changeDate");
+    //alert(btnChangeDate.parentElement.children[0].value);
+
+    // When the user clicks on the button, open the modal
+    btnModal.onclick = function () {
+      modalDatePicker.style.display = "flex";
+    };
+
+    // When the user clicks on <span> (x), close the modal
+    spanModal.onclick = function () {
+      modalDatePicker.style.display = "none";
+    };
+
+    // <button id="changeDate" onclick="myFunction()">Ok</button></div>
+
+    btnChangeDate.onclick = function () {
+      //voir fonction changeDate dans script systeme_solaire.js
+    };
+
+    /* // When the user clicks anywhere outside of the modal, close it
+                  window.onclick = function (event) {
+                    if (event.target == modal) {
+                      modal.style.display = "none";
+                    }
+                  } */
+
+    /*------------------------------------FullScreen--------------------------------------------------*/
+    let elemFullScreen = document.body;
+
+    /* When the openFullscreen() function is executed, open the video in fullscreen.
+                    Note that we must include prefixes for different browsers, as they don't support the requestFullscreen method yet */
+    function openFullscreen() {
+      if (elemFullScreen.requestFullscreen) {
+        elemFullScreen.requestFullscreen();
+      } else if (elemFullScreen.mozRequestFullScreen) {
+        /* Firefox */
+        elemFullScreen.mozRequestFullScreen();
+      } else if (elemFullScreen.webkitRequestFullscreen) {
+        /* Chrome, Safari and Opera */
+        elemFullScreen.webkitRequestFullscreen();
+      } else if (elemFullScreen.msRequestFullscreen) {
+        /* IE/Edge */
+        elemFullScreen.msRequestFullscreen();
+      }
+    }
+
+    /* Close fullscreen */
+    function closeFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        /* Firefox */
+        document.mozCancelFullScreen();
+      } else if (document.webkitExitFullscreen) {
+        /* Chrome, Safari and Opera */
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        /* IE/Edge */
+        document.msExitFullscreen();
+      }
+    }
+
+    // https://universal-soundbank.com/sounds/1009.mp3
+
+    /*sons Musique*/
+    const musiquesrc = [
+      "https://universal-soundbank.com/sounds/1009.mp3",
+      "https://universal-soundbank.com/sounds/11024.mp3",
+      "https://universal-soundbank.com/sounds/11507.mp3",
+      "https://universal-soundbank.com/sounds/11505.mp3",
+      "https://universal-soundbank.com/sounds/11026.mp3",
+      "https://universal-soundbank.com/sounds/866.mp3",
+    ];
+    const musique_volume = 0.1; //reglage volume musique backgroud
+    var mamusique = new Audio();
+    mamusique.src = musiquesrc[0];
+    mamusique.preload = "auto";
+    mamusique.muted = 1;
+    mamusique.autoplay = "autoplay";
+    mamusique.volume = musique_volume;
+    mamusique.loop = true;
+    var choixmusique = 0,
+      muted = true;
+
+    const sonBoutonsSrc = [
+      "http://www.soundjay.com/buttons/sounds/button-42.mp3",
+      "https://www.soundjay.com/buttons/sounds/button-42.mp3",
+      "https://www.soundjay.com/buttons/sounds/beep-30b.mp3",
+      "https://www.soundjay.com/buttons/sounds/button-34.mp3",
+      "https://www.soundjay.com/buttons/sounds/button-31.mp3",
+      "https://www.soundjay.com/buttons/sounds/button-33a.mp3",
+    ];
+    const bouton_volume = 1; //reglage volume son boutons
+    var sonBouton = new Audio();
+    sonBouton.src = sonBoutonsSrc[0]; //choisir entre 0 et 5
+    sonBouton.preload = "auto";
+    sonBouton.muted = 0;
+    sonBouton.autoplay = "autoplay";
+    sonBouton.volume = bouton_volume;
+    sonBouton.loop = false;
+    //sonBouton.play();
+
+    //let soundButtonNbr = 0;// const playSoundButtons =() => sonBoutons[soundButtonNbr].play();
+    const playSoundButtons = () => sonBouton.play();
+
+    const playMusique = (choixmusique) => {
+      mamusique.pause();
+      mamusique.src = musiquesrc[choixmusique];
+
+      if (!mamusique.muted) {
+        mamusique.play();
+      }
+    };
+
+    const muteAudio = (muted) => {
+      muted == 1 ? (mamusique.muted = 0) : (mamusique.muted = 1);
+    };
+  </script>
+  <script src="v3d.js"></script>
+  <script src="systeme_solaire.js"></script>
+</html>
