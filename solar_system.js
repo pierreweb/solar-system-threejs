@@ -28,7 +28,10 @@ import { createBeltObject } from "./objects/beltFactory.js";
 import { createMoonForEarth } from "./objects/moonFactory.js";
 import { updateCelestialPositions } from "./simulation/updateCelestialPositions.js";
 import { applyEphemerides } from "./simulation/applyEphemerides.js";
-import { fetchEphemeridesForBodies } from "./api/miriade.js";
+import {
+  fetchEphemeridesForBodies,
+  fetchMoonEphemeris,
+} from "./api/miriade.js";
 import { onPointerDown } from "./ui/interactions.js";
 import { applyLightPreset } from "./core/lighting.js";
 import { setupResizeHandler } from "./ui/resizeHandler.js";
@@ -52,11 +55,11 @@ const MIRIADE_SUPPORTED_BODIES = [
   "Neptune",
   "Pluto",
 ];
-//const MIRIade_AU_TO_SCENE_DISTANCE = 30;
 const MIRIADE_LOG_DISTANCE_SCALE = 70;
 const MIRIADE_MIN_SCENE_DISTANCE = 8;
-//const MIRIade_LONGITUDE_OFFSET_DEG = 0;
 const MIRIADE_LONGITUDE_OFFSET_DEG = 0;
+const MIRIADE_MOON_AU_TO_SCENE_DISTANCE = 2200;
+const MIRIADE_MOON_LONGITUDE_OFFSET_DEG = 0;
 
 const dateInput = document.getElementById("dateInput");
 const speedInput = document.getElementById("speed");
@@ -87,6 +90,8 @@ const miriadeState = {
   requestToken: 0,
   latestEphemerides: [],
   lastRequestedDateStr: null,
+  moonRequestToken: 0,
+  latestMoonEphemeris: null,
 };
 
 const skyTexture = textureLoader.load("./textures/2k_stars.jpg");
@@ -164,6 +169,46 @@ function updateSpeed() {
   }
 }
 
+function applyMoonEphemeris(moonEphemeris) {
+  const earth = objectRegistry.get("Earth");
+  const moon = earth?.moon;
+
+  if (!moon?.orbit || !moon?.mesh) {
+    console.warn("[Miriade] Moon structure is not available on Earth.");
+    return false;
+  }
+
+  if (!Number.isFinite(moonEphemeris?.longitudeDeg)) {
+    console.warn(
+      "[Miriade] Skipping Moon: missing usable longitude.",
+      moonEphemeris,
+    );
+    return false;
+  }
+
+  if (!Number.isFinite(moonEphemeris?.radiusAu)) {
+    console.warn(
+      "[Miriade] Skipping Moon: missing usable radius.",
+      moonEphemeris,
+    );
+    return false;
+  }
+
+  const orbitAngle = THREE.MathUtils.degToRad(
+    moonEphemeris.longitudeDeg + MIRIADE_MOON_LONGITUDE_OFFSET_DEG,
+  );
+  const sceneDistance =
+    moonEphemeris.radiusAu * MIRIADE_MOON_AU_TO_SCENE_DISTANCE;
+
+  moon.orbitAngle = orbitAngle;
+  moon.orbit.rotation.y = orbitAngle;
+  moon.mesh.position.x = sceneDistance;
+  moon.latestEphemeris = moonEphemeris;
+  moon.latestSceneDistance = sceneDistance;
+
+  return true;
+}
+
 async function refreshMiriadeEphemerides(dateStr) {
   if (!dateStr) return;
 
@@ -187,16 +232,6 @@ async function refreshMiriadeEphemerides(dateStr) {
       ephemerides,
     );
 
-    /*   applyEphemerides({
-      ephemerides,
-      objectRegistry,
-      animatedObjects,
-      supportedBodyNames: MIRIADE_SUPPORTED_BODIES,
-      auToSceneDistanceScale: MIRIade_AU_TO_SCENE_DISTANCE,
-      longitudeOffsetDeg: MIRIade_LONGITUDE_OFFSET_DEG,
-      logger: console,
-    }); */
-
     applyEphemerides({
       ephemerides,
       objectRegistry,
@@ -214,6 +249,38 @@ async function refreshMiriadeEphemerides(dateStr) {
 
     console.error(
       `[Miriade] Failed to fetch heliocentric ephemerides for ${dateStr}`,
+      error,
+    );
+  }
+}
+
+async function refreshMoonEphemeris(dateStr) {
+  if (!dateStr) return;
+
+  const requestToken = ++miriadeState.moonRequestToken;
+
+  try {
+    const moonEphemeris = await fetchMoonEphemeris(dateStr);
+
+    if (requestToken !== miriadeState.moonRequestToken) {
+      return;
+    }
+
+    miriadeState.latestMoonEphemeris = moonEphemeris;
+
+    console.info(
+      `[Miriade] Normalized geocentric Moon ephemeris for ${dateStr}`,
+      moonEphemeris,
+    );
+
+    applyMoonEphemeris(moonEphemeris);
+  } catch (error) {
+    if (requestToken !== miriadeState.moonRequestToken) {
+      return;
+    }
+
+    console.error(
+      `[Miriade] Failed to fetch geocentric Moon ephemeris for ${dateStr}`,
       error,
     );
   }
@@ -267,6 +334,8 @@ createMoonForEarth(LIGHT_PRESETS.normal, {
   textureLoader,
   MOON_ORBIT_DAYS,
   MOON_ROTATION_DAYS,
+  SHOW_AXES_HELPER,
+  clickableMeshes,
 });
 
 speedInput?.addEventListener("input", updateSpeed);
@@ -311,6 +380,7 @@ dateInput?.addEventListener("change", () => {
   if (!dateInput.value) return;
   setCurrentDate(new Date(`${dateInput.value}T00:00:00Z`));
   refreshMiriadeEphemerides(dateInput.value);
+  refreshMoonEphemeris(dateInput.value);
 });
 
 setCurrentDate(new Date());
@@ -324,6 +394,7 @@ clearPlanetInfoDrawer({
 //updatePlanetInfoDrawer("Saturn"); //pour test
 
 refreshMiriadeEphemerides(formatDateUTC(simulation.date));
+refreshMoonEphemeris(formatDateUTC(simulation.date));
 
 const clock = new THREE.Clock();
 

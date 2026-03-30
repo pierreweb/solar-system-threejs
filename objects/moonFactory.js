@@ -5,6 +5,8 @@ export function createMoonForEarth(preset, deps) {
     textureLoader,
     MOON_ORBIT_DAYS,
     MOON_ROTATION_DAYS,
+    SHOW_AXES_HELPER,
+    clickableMeshes,
   } = deps;
 
   const earth = objectRegistry.get("Earth");
@@ -27,6 +29,18 @@ export function createMoonForEarth(preset, deps) {
     new THREE.SphereGeometry(0.75, 24, 24),
     moonMaterial,
   );
+
+  if (SHOW_AXES_HELPER) {
+    const moonAxis = new THREE.AxesHelper(4);
+    moon.add(moonAxis);
+  }
+
+  moon.userData.bodyName = "Moon";
+  moon.userData.clickable = true;
+
+  if (Array.isArray(clickableMeshes)) {
+    clickableMeshes.push(moon);
+  }
 
   moon.position.x = 5.5;
   moonOrbit.add(moon);

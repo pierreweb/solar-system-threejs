@@ -113,6 +113,29 @@ function normalizeSingleBodyResponse(name, payload) {
   };
 }
 
+function buildMoonMiriadeUrl(dateStr) {
+  if (!isValidUtcDateString(dateStr)) {
+    throw new Error(
+      `[Miriade] Invalid UTC date string "${dateStr}". Expected YYYY-MM-DD.`,
+    );
+  }
+
+  const url = new URL(MIRIade_BASE_URL);
+  url.search = new URLSearchParams({
+    "-name": "s:Moon",
+    "-observer": "500",
+    "-ep": dateStr,
+    "-nbd": "1",
+    "-step": "1d",
+    "-tscale": "UTC",
+    "-rplane": "2",
+    "-teph": "1",
+    "-mime": "json",
+  }).toString();
+
+  return url.toString();
+}
+
 export function buildMiriadeUrl(name, dateStr) {
   const bodyCode = SUPPORTED_BODY_CODES[name];
 
@@ -209,6 +232,35 @@ export async function fetchBodyEphemeris(name, dateStr) {
   }
 
   return normalizeSingleBodyResponse(name, payload);
+}
+
+export async function fetchMoonEphemeris(dateStr) {
+  const url = buildMoonMiriadeUrl(dateStr);
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[Miriade] HTTP ${response.status} ${response.statusText} for Moon`,
+    );
+  }
+
+  const payload = await response.json();
+
+  if (payload?.flag !== undefined && Number(payload.flag) !== 1) {
+    throw new Error(
+      `[Miriade] Request failed for Moon: ${payload?.status || `flag=${payload.flag}`}`,
+    );
+  }
+
+  return {
+    ...normalizeSingleBodyResponse("Moon", payload),
+    name: "Moon",
+  };
 }
 
 export async function fetchEphemeridesForBodies(dateStr, bodyNames) {
