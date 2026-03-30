@@ -40,7 +40,18 @@ import {
   textureLoader,
 } from "./core/sceneSetup.js";
 
-const MIRIade_PHASE1_BODIES = ["Mercury", "Venus", "Earth", "Mars"];
+const MIRIade_PHASE1_BODIES = [
+  "Mercury",
+  "Venus",
+  "Earth",
+  "Mars",
+  "Ceres",
+  "Jupiter",
+  "Saturn",
+  "Uranus",
+  "Neptune",
+  "Pluto",
+];
 const MIRIade_AU_TO_SCENE_DISTANCE = 30;
 const MIRIade_LONGITUDE_OFFSET_DEG = 0;
 

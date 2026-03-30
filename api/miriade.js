@@ -6,6 +6,12 @@ const SUPPORTED_BODY_CODES = {
   Venus: "p:Venus",
   Earth: "p:Earth",
   Mars: "p:Mars",
+  Ceres: "dp:Ceres",
+  Jupiter: "p:Jupiter",
+  Saturn: "p:Saturn",
+  Uranus: "p:Uranus",
+  Neptune: "p:Neptune",
+  Pluto: "dp:Pluto",
 };
 
 function isValidUtcDateString(value) {
@@ -66,9 +72,6 @@ function normalizeBodyName(name, payload) {
 }
 
 function normalizeSingleBodyResponse(name, payload) {
-  // console.log("[Miriade row keys]", Object.keys(payload?.data?.[0] ?? {}));
-  //console.log("[Miriade units]", payload?.unit);
-  //console.log("[Miriade datacol]", payload?.datacol);
   const row = Array.isArray(payload?.data) ? (payload.data[0] ?? null) : null;
 
   const longitudeValue = pickFirstValue(row, [
@@ -88,16 +91,6 @@ function normalizeSingleBodyResponse(name, payload) {
     "dec",
     "b",
   ]);
-
-  /*   const radiusValue = pickFirstValue(row, [
-    "Radius",
-    "radius",
-    "range",
-    "dobs",
-    "heliocentric_distance",
-    "distance",
-    "r",
-  ]); */
 
   const radiusValue = pickFirstValue(row, [
     "Dobs",
@@ -119,6 +112,7 @@ function normalizeSingleBodyResponse(name, payload) {
     raw: payload,
   };
 }
+
 export function buildMiriadeUrl(name, dateStr) {
   const bodyCode = SUPPORTED_BODY_CODES[name];
 
@@ -135,9 +129,6 @@ export function buildMiriadeUrl(name, dateStr) {
       `[Miriade] Invalid UTC date string "${dateStr}". Expected YYYY-MM-DD.`,
     );
   }
-
-  // console.log("=== NEW buildMiriadeUrl version loaded ===");
-  // console.log("buildMiriadeUrl params:", { name, dateStr });
 
   const url = new URL(MIRIade_BASE_URL);
   url.search = new URLSearchParams({
@@ -196,7 +187,6 @@ export function dmsToDeg(value) {
 
 export async function fetchBodyEphemeris(name, dateStr) {
   const url = buildMiriadeUrl(name, dateStr);
-  //console.log("[Miriade URL]", url);
 
   const response = await fetch(url, {
     headers: {
