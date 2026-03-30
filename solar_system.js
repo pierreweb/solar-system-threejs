@@ -16,6 +16,13 @@ import {
   updatePlanetInfoDrawer,
 } from "./ui/planetInfoDrawer.js";
 import {
+  getVisualColorByRole,
+  getPlanetLikeEmissiveIntensity,
+  createPlanetLikeMaterial,
+} from "./objects/materials.js";
+import { createLabel, projectLabel } from "./objects/labels.js";
+import { createOrbitRing } from "./objects/orbitRings.js";
+import {
   renderer,
   scene,
   camera,
@@ -123,69 +130,6 @@ function updateSpeed() {
   }
 }
 
-function getVisualBoostByRole(obj, preset) {
-  if (obj.visualRole === "planet") return preset.planetEmissiveBoost;
-  if (obj.visualRole === "dwarf") return preset.dwarfEmissiveBoost;
-  if (obj.visualRole === "ring") return preset.ringEmissiveBoost;
-  if (obj.visualRole === "belt") return preset.beltEmissiveBoost;
-  if (obj.visualRole === "moon") return preset.moonEmissiveBoost;
-  return 0;
-}
-
-function getVisualColorByRole(obj, preset) {
-  if (obj.visualRole === "planet") return preset.planetEmissiveColor;
-  if (obj.visualRole === "dwarf") return preset.dwarfEmissiveColor;
-  if (obj.visualRole === "ring") return preset.ringEmissiveColor;
-  if (obj.visualRole === "belt") return preset.beltEmissiveColor;
-  if (obj.visualRole === "moon") return preset.moonEmissiveColor;
-  return 0x111111;
-}
-
-function getPlanetLikeEmissiveIntensity(obj, preset) {
-  const baseBoost = getVisualBoostByRole(obj, preset);
-  const distanceFactor = obj.distance ? obj.distance / 20 : 0;
-  return baseBoost + distanceFactor;
-}
-
-function createPlanetLikeMaterial(obj, preset) {
-  const texture = obj.texture ? textureLoader.load(obj.texture) : null;
-
-  return new THREE.MeshStandardMaterial({
-    map: texture,
-    emissiveMap: texture,
-    roughness: 1,
-    metalness: 1,
-    color: obj.color,
-    emissiveIntensity: getPlanetLikeEmissiveIntensity(obj, preset),
-    emissive: getVisualColorByRole(obj, preset),
-  });
-}
-
-function createLabel(text) {
-  const label = document.createElement("div");
-  label.className = "label";
-  label.textContent = text;
-  label.style.display = toggleLabelsInput?.checked ? "block" : "none";
-  document.body.append(label);
-  return label;
-}
-
-function createOrbitRing(distance) {
-  const orbitRing = new THREE.Mesh(
-    new THREE.RingGeometry(distance - 0.13, distance + 0.13, 256),
-    new THREE.MeshBasicMaterial({
-      color: 0x8d85aa,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.9,
-    }),
-  );
-  orbitRing.rotation.x = Math.PI / 2;
-  group.add(orbitRing);
-  orbitRingObjects.push(orbitRing);
-  return orbitRing;
-}
-
 function createPlanetObject(obj, preset) {
   const orbit = new THREE.Object3D();
   group.add(orbit);
@@ -195,7 +139,7 @@ function createPlanetObject(obj, preset) {
   tiltPivot.rotation.z = THREE.MathUtils.degToRad(obj.tiltDeg || 0);
   orbit.add(tiltPivot);
 
-  const material = createPlanetLikeMaterial(obj, preset);
+  const material = createPlanetLikeMaterial(obj, preset, { textureLoader });
 
   const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(obj.radius, 32, 32),
@@ -213,8 +157,12 @@ function createPlanetObject(obj, preset) {
     mesh.add(axisLine);
   }
 
-  const orbitRing = obj.hasOrbitRing ? createOrbitRing(obj.distance) : null;
-  const label = obj.hasLabel ? createLabel(obj.name) : null;
+  const orbitRing = obj.hasOrbitRing
+    ? createOrbitRing(obj.distance, { group, orbitRingObjects })
+    : null;
+  const label = obj.hasLabel
+    ? createLabel(obj.name, { toggleLabelsInput })
+    : null;
 
   const entry = {
     ...obj,
@@ -413,35 +361,6 @@ function applyLightPreset(mode = "normal") {
   }
 }
 
-/* function projectLabel(entry, tmpWorldPos) {
-  if (!toggleLabelsInput?.checked || !entry.label) return;
-
-  entry.mesh.getWorldPosition(tmpWorldPos);
-  tmpWorldPos.project(camera);
-
-  const x = (tmpWorldPos.x * 0.5 + 0.5) * window.innerWidth;
-  const y = (-tmpWorldPos.y * 0.5 + 0.5) * window.innerHeight;
-  const hidden = tmpWorldPos.z > 1 || tmpWorldPos.z < -1;
-
-  entry.label.style.display = hidden ? "none" : "block";
-  entry.label.style.left = `${x}px`;
-  entry.label.style.top = `${y}px`;
-} */
-
-function projectLabel(entry, worldPos) {
-  if (!toggleLabelsInput?.checked) return;
-
-  tmpLabelWorldPos.copy(worldPos).project(camera);
-
-  const x = (tmpLabelWorldPos.x * 0.5 + 0.5) * window.innerWidth;
-  const y = (-tmpLabelWorldPos.y * 0.5 + 0.5) * window.innerHeight;
-  const hidden = tmpLabelWorldPos.z > 1 || tmpLabelWorldPos.z < -1;
-
-  entry.label.style.display = hidden ? "none" : "block";
-  entry.label.style.left = `${x}px`;
-  entry.label.style.top = `${y}px`;
-}
-
 function updateCelestialPositions(deltaSeconds) {
   const dt = simulation.paused ? 0 : deltaSeconds;
   const simDayDelta = dt * simulation.daysPerSecond;
@@ -605,7 +524,7 @@ function animate() {
     tmpOffset.set(0, 0.4 * radius * LABEL_HEIGHT_FACTOR, 0);
     tmpLabelWorldPos.copy(tmpWorldPos).add(tmpOffset);
 
-    projectLabel(entry, tmpLabelWorldPos);
+    projectLabel(entry, tmpLabelWorldPos, { toggleLabelsInput, camera });
   }
 
   renderer.render(scene, camera);
@@ -666,3 +585,4 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
