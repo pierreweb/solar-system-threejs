@@ -1,10 +1,28 @@
 // Solar System Visualization with Three.js
 //solar_system.js
 import * as THREE from "three";
-import { OrbitControls } from "https://unpkg.com/three@0.162.0/examples/jsm/controls/OrbitControls.js";
-import { getPlanetInfo } from "./data/planetInfoData.js";
+import {
+  SUN_ROTATION_DAYS,
+  MOON_ORBIT_DAYS,
+  MOON_ROTATION_DAYS,
+  SHOW_AXES_HELPER,
+  LIGHT_PRESETS,
+  LABEL_HEIGHT_FACTOR,
+} from "./config/constants.js";
+import { solarObjects } from "./config/solarObjects.js";
+import { formatDateUTC } from "./utils/date.js";
+import {
+  clearPlanetInfoDrawer,
+  updatePlanetInfoDrawer,
+} from "./ui/planetInfoDrawer.js";
+import {
+  renderer,
+  scene,
+  camera,
+  controls,
+  textureLoader,
+} from "./core/sceneSetup.js";
 
-const canvas = document.getElementById("scene");
 const dateInput = document.getElementById("dateInput");
 const speedInput = document.getElementById("speed");
 const speedOut = document.getElementById("speedOut");
@@ -19,290 +37,9 @@ const planetInfoName = document.getElementById("planetInfoName");
 const planetInfoType = document.getElementById("planetInfoType");
 const planetInfoBody = document.getElementById("planetInfoBody");
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
-
-const camera = new THREE.PerspectiveCamera(
-  55,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  5000,
-);
-camera.position.set(0, 180, 260);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.minDistance = 20;
-controls.maxDistance = 1200;
-
-const textureLoader = new THREE.TextureLoader();
-
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const clickableMeshes = [];
-
-const SUN_ROTATION_DAYS = 25.0;
-const MOON_ORBIT_DAYS = 27.32;
-const MOON_ROTATION_DAYS = 27.32;
-const SHOW_AXES_HELPER = true;
-
-const LIGHT_PRESETS = {
-  normal: {
-    ambientIntensity: 0.0,
-    ambientColor: 0xffffff,
-    cameraFillIntensity: 0.0,
-    cameraFillColor: 0xffffff,
-    sunIntensity: 20,
-    sunLightDecay: 0.3,
-    sunLightColor: 0xfff4d6,
-
-    planetEmissiveBoost: 1.0,
-    planetEmissiveColor: 0x00ff00,
-
-    dwarfEmissiveBoost: 0.8,
-    dwarfEmissiveColor: 0x00ff00,
-
-    moonEmissiveBoost: 0.08,
-    moonEmissiveColor: 0x222222,
-
-    ringEmissiveBoost: 1.0,
-    ringEmissiveColor: 0x222222,
-    ringOpacity: 0.95,
-    ringTint: 0xffffff,
-
-    beltEmissiveBoost: 0.03,
-    beltEmissiveColor: 0x111111,
-    beltTint: 0x8f8476,
-  },
-
-  boost: {
-    ambientIntensity: 0.28,
-    ambientColor: 0xffffff,
-    cameraFillIntensity: 0.24,
-    cameraFillColor: 0xffffff,
-    sunIntensity: 800,
-    sunLightDecay: 0.3,
-    sunLightColor: 0xfff4d6,
-
-    planetEmissiveBoost: 2.0,
-    planetEmissiveColor: 0x0000ff,
-
-    dwarfEmissiveBoost: 1.5,
-    dwarfEmissiveColor: 0x0000ff,
-
-    moonEmissiveBoost: 0.18,
-    moonEmissiveColor: 0x222244,
-
-    ringEmissiveBoost: 1.6,
-    ringEmissiveColor: 0x3333aa,
-    ringOpacity: 0.98,
-    ringTint: 0xffffff,
-
-    beltEmissiveBoost: 0.08,
-    beltEmissiveColor: 0x222244,
-    beltTint: 0xb0a392,
-  },
-
-  cinematic: {
-    ambientIntensity: 0.0,
-    ambientColor: 0xffffff,
-    cameraFillIntensity: 0.0,
-    cameraFillColor: 0xffffff,
-    sunIntensity: 50,
-    sunLightDecay: 0.1,
-    sunLightColor: 0xfff4d6,
-
-    planetEmissiveBoost: 1.0,
-    planetEmissiveColor: 0xff0000,
-
-    dwarfEmissiveBoost: 0.8,
-    dwarfEmissiveColor: 0xaa0000,
-
-    moonEmissiveBoost: 0.03,
-    moonEmissiveColor: 0x111111,
-
-    ringEmissiveBoost: 0.5,
-    ringEmissiveColor: 0x330000,
-    ringOpacity: 0.9,
-    ringTint: 0xf4ead0,
-
-    beltEmissiveBoost: 0.01,
-    beltEmissiveColor: 0x111111,
-    beltTint: 0x6f675c,
-  },
-};
-
-const solarObjects = [
-  {
-    name: "Mercury",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 1.7,
-    distance: 16,
-    yearDays: 88,
-    dayHours: 1407.6,
-    tiltDeg: 0.03,
-    texture: "./textures/2k_mercury.jpg",
-    color: 0xb3a28a,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Venus",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 2.5,
-    distance: 22,
-    yearDays: 224.7,
-    dayHours: -5832.5,
-    tiltDeg: 177.4,
-    texture: "./textures/2k_venus_atmosphere.jpg",
-    color: 0xd2a86b,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Earth",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 2.65,
-    distance: 30,
-    yearDays: 365.25,
-    dayHours: 23.93,
-    tiltDeg: 23.44,
-    texture: "./textures/land_ocean_ice_cloud_2048.jpg",
-    color: 0x4f86ff,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Mars",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 2.0,
-    distance: 40,
-    yearDays: 687,
-    dayHours: 24.62,
-    tiltDeg: 25.19,
-    texture: "./textures/2k_mars.jpg",
-    color: 0xc96f55,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Asteroid Belt",
-    kind: "belt",
-    visualRole: "belt",
-    innerRadius: 47,
-    outerRadius: 58,
-    thickness: 1.8,
-    count: 900,
-    yearDays: 1800,
-    color: 0x8f8476,
-    hasOrbitRing: false,
-    hasLabel: false,
-  },
-  {
-    name: "Ceres",
-    kind: "dwarf",
-    visualRole: "dwarf",
-    radius: 0.75,
-    distance: 52,
-    yearDays: 1680,
-    dayHours: 9.07,
-    tiltDeg: 4,
-    texture: "./textures/ceres.jpg",
-    color: 0xb7b1a3,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Jupiter",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 8.5,
-    distance: 62,
-    yearDays: 4331,
-    dayHours: 9.93,
-    tiltDeg: 3.13,
-    texture: "./textures/2k_jupiter.jpg",
-    color: 0xd2b28a,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Saturn",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 7.2,
-    distance: 88,
-    yearDays: 10747,
-    dayHours: 10.7,
-    tiltDeg: 26.73,
-    texture: "./textures/2k_saturn.jpg",
-    color: 0xd9c58c,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Saturn Ring",
-    kind: "ring",
-    visualRole: "ring",
-    parentName: "Saturn",
-    innerRadius: 7.2 * 1.3,
-    outerRadius: 7.2 * 2.1,
-    texture: "./textures/saturn_small_ring_tex.png",
-    color: 0xffffff,
-    hasOrbitRing: false,
-    hasLabel: false,
-  },
-  {
-    name: "Uranus",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 5.0,
-    distance: 114,
-    yearDays: 30589,
-    dayHours: -17.24,
-    tiltDeg: 97.77,
-    texture: "./textures/2k_uranus.jpg",
-    color: 0xa5d9e7,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Neptune",
-    kind: "planet",
-    visualRole: "planet",
-    radius: 4.9,
-    distance: 140,
-    yearDays: 59800,
-    dayHours: 16.11,
-    tiltDeg: 28.32,
-    texture: "./textures/2k_neptune.jpg",
-    color: 0x456ddd,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-  {
-    name: "Pluto",
-    kind: "dwarf",
-    visualRole: "dwarf",
-    radius: 0.95,
-    distance: 165,
-    yearDays: 90560,
-    dayHours: -153.3,
-    tiltDeg: 119.6,
-    texture: "./textures/2k_pluto.jpg",
-    color: 0xbfae9c,
-    hasOrbitRing: true,
-    hasLabel: true,
-  },
-];
 
 const simulation = {
   date: new Date(),
@@ -364,10 +101,6 @@ const animatedObjects = [];
 const orbitRingObjects = [];
 const labelObjects = [];
 let asteroidBeltEntry = null;
-
-function formatDateUTC(date) {
-  return date.toISOString().slice(0, 10);
-}
 
 function setCurrentDate(date) {
   simulation.date = new Date(date);
@@ -818,7 +551,12 @@ dateInput?.addEventListener("change", () => {
 
 setCurrentDate(new Date());
 updateSpeed();
-clearPlanetInfoDrawer();
+clearPlanetInfoDrawer({
+  planetInfoDrawer,
+  planetInfoName,
+  planetInfoType,
+  planetInfoBody,
+});
 //updatePlanetInfoDrawer("Saturn"); //pour test
 
 const clock = new THREE.Clock();
@@ -832,7 +570,6 @@ const clickableMeshes = []; */
 const tmpWorldPos = new THREE.Vector3();
 const tmpLabelWorldPos = new THREE.Vector3();
 const tmpOffset = new THREE.Vector3();
-const LABEL_HEIGHT_FACTOR = 2.0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -887,7 +624,12 @@ function onPointerDown(event) {
   const intersects = raycaster.intersectObjects(clickableMeshes, true);
 
   if (!intersects.length) {
-    clearPlanetInfoDrawer();
+    clearPlanetInfoDrawer({
+      planetInfoDrawer,
+      planetInfoName,
+      planetInfoType,
+      planetInfoBody,
+    });
     return;
   }
 
@@ -898,94 +640,26 @@ function onPointerDown(event) {
   }
 
   if (!clickedObject || !clickedObject.userData?.bodyName) {
-    clearPlanetInfoDrawer();
+    clearPlanetInfoDrawer({
+      planetInfoDrawer,
+      planetInfoName,
+      planetInfoType,
+      planetInfoBody,
+    });
     return;
   }
 
-  updatePlanetInfoDrawer(clickedObject.userData.bodyName);
+  updatePlanetInfoDrawer(clickedObject.userData.bodyName, {
+    planetInfoDrawer,
+    planetInfoName,
+    planetInfoType,
+    planetInfoBody,
+  });
 }
 
 applyLightPreset("normal");
 
 animate();
-
-/*drawer planet info*/
-function renderInfoRow(label, value) {
-  return `
-    <div class="planet-info-row">
-      <span class="planet-info-label">${label}</span>
-      <span class="planet-info-value">${value ?? "—"}</span>
-    </div>
-  `;
-}
-
-function clearPlanetInfoDrawer() {
-  if (
-    !planetInfoDrawer ||
-    !planetInfoName ||
-    !planetInfoType ||
-    !planetInfoBody
-  ) {
-    return;
-  }
-
-  planetInfoDrawer.classList.add("is-empty");
-  planetInfoDrawer.classList.remove("is-open");
-
-  planetInfoName.textContent = "No selection";
-  planetInfoType.textContent = "Select a planet to view information";
-  planetInfoBody.innerHTML = `
-    <div class="planet-info-empty">
-      Select a planet to view information
-    </div>
-  `;
-}
-
-function updatePlanetInfoDrawer(name) {
-  if (
-    !planetInfoDrawer ||
-    !planetInfoName ||
-    !planetInfoType ||
-    !planetInfoBody
-  ) {
-    return;
-  }
-
-  const info = getPlanetInfo(name);
-
-  if (!info) {
-    clearPlanetInfoDrawer();
-    return;
-  }
-
-  planetInfoDrawer.classList.remove("is-empty");
-  planetInfoDrawer.classList.add("is-open");
-
-  planetInfoName.textContent = info.name ?? "Unknown object";
-  planetInfoType.textContent = info.type ?? "";
-
-  planetInfoBody.innerHTML = `
-    <div class="planet-info-grid">
-      ${renderInfoRow("Mass", info.mass)}
-      ${renderInfoRow("Equatorial radius", info.equatorialRadius)}
-      ${renderInfoRow("Density", info.density)}
-      ${renderInfoRow("Volume", info.volume)}
-      ${renderInfoRow("Orbital period", info.orbitalPeriod)}
-      ${renderInfoRow("Rotation period", info.rotationPeriod)}
-      ${renderInfoRow("Distance from Sun", info.distanceFromSun)}
-      ${renderInfoRow("Min temperature", info.minTemperature)}
-      ${renderInfoRow("Max temperature", info.maxTemperature)}
-      ${renderInfoRow("Mean temperature", info.meanTemperature)}
-      ${renderInfoRow("Gravity", info.gravity)}
-      ${renderInfoRow("Albedo", info.albedo)}
-      ${renderInfoRow("Moons", info.moons)}
-    </div>
-
-    <div class="planet-info-description">
-      <p>${info.description ?? ""}</p>
-    </div>
-  `;
-}
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
