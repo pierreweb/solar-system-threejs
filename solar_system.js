@@ -27,6 +27,8 @@ import { createRingObject } from "./objects/ringFactory.js";
 import { createBeltObject } from "./objects/beltFactory.js";
 import { createMoonForEarth } from "./objects/moonFactory.js";
 import { updateCelestialPositions } from "./simulation/updateCelestialPositions.js";
+import { applyEphemerides } from "./simulation/applyEphemerides.js";
+import { fetchEphemeridesForBodies } from "./api/miriade.js";
 import { onPointerDown } from "./ui/interactions.js";
 import { applyLightPreset } from "./core/lighting.js";
 import { setupResizeHandler } from "./ui/resizeHandler.js";
@@ -37,6 +39,8 @@ import {
   controls,
   textureLoader,
 } from "./core/sceneSetup.js";
+
+const MIRIade_PHASE1_BODIES = ["Mercury", "Venus", "Earth", "Mars"];
 
 const dateInput = document.getElementById("dateInput");
 const speedInput = document.getElementById("speed");
@@ -61,6 +65,12 @@ const simulation = {
   daysPerSecond: Number(speedInput?.value) || 1,
   paused: false,
   elapsedDays: 0,
+};
+
+const miriadeState = {
+  requestToken: 0,
+  latestEphemerides: [],
+  lastRequestedDateStr: null,
 };
 
 const skyTexture = textureLoader.load("./textures/2k_stars.jpg");
@@ -135,6 +145,47 @@ function updateSpeed() {
 
   if (speedOut) {
     speedOut.textContent = simulation.daysPerSecond.toFixed(1);
+  }
+}
+
+async function refreshMiriadeEphemerides(dateStr) {
+  if (!dateStr) return;
+
+  const requestToken = ++miriadeState.requestToken;
+  miriadeState.lastRequestedDateStr = dateStr;
+
+  try {
+    const ephemerides = await fetchEphemeridesForBodies(
+      dateStr,
+      MIRIade_PHASE1_BODIES,
+    );
+
+    if (requestToken !== miriadeState.requestToken) {
+      return;
+    }
+
+    miriadeState.latestEphemerides = ephemerides;
+
+    console.info(
+      `[Miriade] Normalized heliocentric ephemerides for ${dateStr}`,
+      ephemerides,
+    );
+
+    applyEphemerides({
+      ephemerides,
+      objectRegistry,
+      animatedObjects,
+      logger: console,
+    });
+  } catch (error) {
+    if (requestToken !== miriadeState.requestToken) {
+      return;
+    }
+
+    console.error(
+      `[Miriade] Failed to fetch heliocentric ephemerides for ${dateStr}`,
+      error,
+    );
   }
 }
 
@@ -227,6 +278,7 @@ lightModeInput?.addEventListener("change", () => {
 dateInput?.addEventListener("change", () => {
   if (!dateInput.value) return;
   setCurrentDate(new Date(`${dateInput.value}T00:00:00Z`));
+  refreshMiriadeEphemerides(dateInput.value);
 });
 
 setCurrentDate(new Date());
@@ -238,6 +290,8 @@ clearPlanetInfoDrawer({
   planetInfoBody,
 });
 //updatePlanetInfoDrawer("Saturn"); //pour test
+
+refreshMiriadeEphemerides(formatDateUTC(simulation.date));
 
 const clock = new THREE.Clock();
 
