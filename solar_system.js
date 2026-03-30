@@ -26,6 +26,8 @@ import { createPlanetObject } from "./objects/planetFactory.js";
 import { createRingObject } from "./objects/ringFactory.js";
 import { createBeltObject } from "./objects/beltFactory.js";
 import { createMoonForEarth } from "./objects/moonFactory.js";
+import { updateCelestialPositions } from "./simulation/updateCelestialPositions.js";
+import { onPointerDown } from "./ui/interactions.js";
 import {
   renderer,
   scene,
@@ -179,62 +181,6 @@ function applyLightPreset(mode = "normal") {
   }
 }
 
-function updateCelestialPositions(deltaSeconds) {
-  const dt = simulation.paused ? 0 : deltaSeconds;
-  const simDayDelta = dt * simulation.daysPerSecond;
-
-  if (simDayDelta !== 0) {
-    simulation.elapsedDays += simDayDelta;
-    simulation.date = new Date(simulation.elapsedDays * 86400000);
-
-    if (dateBadge) {
-      dateBadge.textContent = formatDateUTC(simulation.date);
-    }
-
-    if (dateInput) {
-      dateInput.value = formatDateUTC(simulation.date);
-    }
-  }
-
-  for (const entry of animatedObjects) {
-    const orbitAngularSpeed = (Math.PI * 2) / entry.yearDays;
-    const selfRotationDays = Math.abs(entry.dayHours) / 24;
-    const selfAngularSpeed =
-      selfRotationDays > 0 ? (Math.PI * 2) / selfRotationDays : 0;
-
-    entry.orbitAngle += orbitAngularSpeed * simDayDelta;
-    entry.selfRotationAngle += selfAngularSpeed * simDayDelta;
-
-    entry.orbit.rotation.y = entry.orbitAngle;
-    entry.mesh.rotation.y =
-      entry.dayHours < 0 ? -entry.selfRotationAngle : entry.selfRotationAngle;
-
-    if (entry.moon) {
-      const moonOrbitAngularSpeed = (Math.PI * 2) / entry.moon.yearDays;
-      const moonSelfRotationDays = Math.abs(entry.moon.dayHours) / 24;
-      const moonSelfAngularSpeed =
-        moonSelfRotationDays > 0 ? (Math.PI * 2) / moonSelfRotationDays : 0;
-
-      entry.moon.orbitAngle += moonOrbitAngularSpeed * simDayDelta;
-      entry.moon.selfRotationAngle += moonSelfAngularSpeed * simDayDelta;
-
-      entry.moon.orbit.rotation.y = entry.moon.orbitAngle;
-      entry.moon.mesh.rotation.y =
-        entry.moon.dayHours < 0
-          ? -entry.moon.selfRotationAngle
-          : entry.moon.selfRotationAngle;
-    }
-  }
-
-  if (asteroidBeltEntry) {
-    const beltAngularSpeed = (Math.PI * 2) / asteroidBeltEntry.yearDays;
-    asteroidBeltEntry.orbitAngle += beltAngularSpeed * simDayDelta;
-    asteroidBeltEntry.orbit.rotation.y = asteroidBeltEntry.orbitAngle;
-  }
-
-  sun.rotation.y += sunAngularSpeed * simDayDelta;
-}
-
 solarObjects.forEach((obj) => {
   if (obj.kind === "planet" || obj.kind === "dwarf") {
     createPlanetObject(obj, LIGHT_PRESETS.normal, {
@@ -341,7 +287,16 @@ function animate() {
 
   const delta = clock.getDelta();
 
-  updateCelestialPositions(delta);
+  updateCelestialPositions(delta, {
+    simulation,
+    animatedObjects,
+    asteroidBeltEntry,
+    sun,
+    sunAngularSpeed,
+    dateInput,
+    dateBadge,
+    formatDateUTC,
+  });
   controls.update();
 
   /*  for (const entry of labelObjects) {
@@ -376,51 +331,21 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-window.addEventListener("pointerdown", onPointerDown);
-
-function onPointerDown(event) {
-  const rect = renderer.domElement.getBoundingClientRect();
-
-  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, camera);
-
-  const intersects = raycaster.intersectObjects(clickableMeshes, true);
-
-  if (!intersects.length) {
-    clearPlanetInfoDrawer({
-      planetInfoDrawer,
-      planetInfoName,
-      planetInfoType,
-      planetInfoBody,
-    });
-    return;
-  }
-
-  let clickedObject = intersects[0].object;
-
-  while (clickedObject && !clickedObject.userData?.clickable) {
-    clickedObject = clickedObject.parent;
-  }
-
-  if (!clickedObject || !clickedObject.userData?.bodyName) {
-    clearPlanetInfoDrawer({
-      planetInfoDrawer,
-      planetInfoName,
-      planetInfoType,
-      planetInfoBody,
-    });
-    return;
-  }
-
-  updatePlanetInfoDrawer(clickedObject.userData.bodyName, {
+window.addEventListener("pointerdown", (event) =>
+  onPointerDown(event, {
+    renderer,
+    mouse,
+    raycaster,
+    camera,
+    clickableMeshes,
+    clearPlanetInfoDrawer,
+    updatePlanetInfoDrawer,
     planetInfoDrawer,
     planetInfoName,
     planetInfoType,
     planetInfoBody,
-  });
-}
+  }),
+);
 
 applyLightPreset("normal");
 
