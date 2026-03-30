@@ -30,12 +30,84 @@ controls.enableDamping = true;
 controls.minDistance = 20;
 controls.maxDistance = 1200;
 
-const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+//function applyLightPreset(mode = "normal") ligne 481
+const LIGHT_PRESETS = {
+  /*   normal: {
+   
+      ambientIntensity: 0.22,
+    ambientColor: 0xffffff,
+    cameraFillIntensity: 0.18, //entre 1 et 10
+    cameraFillColor: 0xffffff,
+    sunIntensity: 40, //entre 100 et 1000
+    sunLightDecay: 0.3, //entre 0.1 et 1
+    sunLightColor: 0xfff4d6,
+    emissiveBoost: 1,
+    emissiveColor: 0x00ff00,
+  },
+  }, */
+  normal: {
+    //pour test
+    ambientIntensity: 0,
+    ambientColor: 0xffffff,
+    cameraFillIntensity: 0, //entre 1 et 10
+    cameraFillColor: 0xffffff,
+    sunIntensity: 20, //entre 100 et 1000
+    sunLightDecay: 0.3, //entre 0.1 et 1
+    sunLightColor: 0xfff4d6,
+    emissiveBoost: 1,
+    emissiveColor: 0x00ff00,
+  },
+  boost: {
+    sunIntensity: 800,
+    sunLightDecay: 0.3, //entre 0.1 et 1
+    sunLightColor: 0xfff4d6,
+    ambientIntensity: 0.28,
+    ambientColor: 0xffffff,
+    cameraFillIntensity: 0.24,
+    cameraFillColor: 0xffffff,
+    emissiveBoost: 2,
+    emissiveColor: 0x0000ff,
+  },
+  cinematic: {
+    sunIntensity: 50,
+    sunLightDecay: 0.1, //entre 0.1 et 1
+    sunLightColor: 0xfff4d6,
+    ambientIntensity: 0,
+    ambientColor: 0xffffff,
+    cameraFillIntensity: 0,
+    cameraFillColor: 0xffffff,
+    emissiveBoost: 1,
+    emissiveColor: 0xff0000,
+  },
+};
+
+const cameraFillLight = new THREE.DirectionalLight(
+  LIGHT_PRESETS.normal.cameraFillColor,
+  LIGHT_PRESETS.normal.cameraFillIntensity,
+);
+cameraFillLight.position.set(0, 0, 1);
+camera.add(cameraFillLight);
+scene.add(camera);
+
+const ambient = new THREE.AmbientLight(
+  LIGHT_PRESETS.normal.ambientColor,
+  LIGHT_PRESETS.normal.ambientIntensity,
+);
 scene.add(ambient);
 
-const sunLight = new THREE.PointLight(0xfff4d6, 4.5, 0, 1.0);
+const sunLight = new THREE.PointLight(
+  LIGHT_PRESETS.normal.sunLightColor,
+  LIGHT_PRESETS.normal.sunIntensity,
+  0,
+  LIGHT_PRESETS.normal.sunLightDecay,
+); //intensity, distance, decay
 sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
+//sunLight.intensity = 400;
+
+const rimLight = new THREE.DirectionalLight(0x99bbff, 1);
+rimLight.position.set(-1, 0.4, -0.6);
+scene.add(rimLight);
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -153,23 +225,54 @@ const planets = bodies.map((body) => {
   const orbit = new THREE.Object3D();
   group.add(orbit);
 
+  const tiltPivot = new THREE.Object3D();
+  tiltPivot.position.x = body.distance;
+  tiltPivot.rotation.z = THREE.MathUtils.degToRad(body.tiltDeg);
+  orbit.add(tiltPivot);
+
   const texture = body.texture ? textureLoader.load(body.texture) : null;
+
+  // const t = THREE.MathUtils.clamp(body.distance / 20, 0, 1);
+  //const emissiveBoost = THREE.MathUtils.lerp(0.3, 10, t);
+
+  /*  const emissiveBoost = THREE.MathUtils.clamp(
+    0.05 + body.distance / 1000,
+    0.0,
+    0.22,
+  ); */
+  //const emissiveBoost = THREE.MathUtils.clamp(3 + body.distance / 20, 0.3, 10);
+  /*   const emissiveBoost = THREE.MathUtils.clamp(
+    0.05 + body.distance / 1000,
+    0.1,
+    0.22,
+  ); */
+  // const emissiveBoost = 5 + body.distance / 20; // pour reglage manuel
+  /* const emissivePreset = {
+    normal: {
+      emissiveBoost: 3 + body.distance / 20, // pour reglage manuel
+    },
+  }; */
 
   const material = new THREE.MeshStandardMaterial({
     map: texture,
-    emissive: 0x222222,
+    //emissive: 0x151510,
     emissiveMap: texture,
-    emissiveIntensity: 0.12,
+    // emissiveIntensity: 0.12,
+
+    //emissiveIntensity: emissiveBoost,
     roughness: 1,
-    metalness: 0,
+    metalness: 1,
     color: body.color,
+    //
+    emissiveIntensity: LIGHT_PRESETS.normal.emissiveBoost + body.distance / 20,
+    emissive: LIGHT_PRESETS.normal.emissiveColor,
   });
 
   const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(body.radius, 32, 32),
     material,
   );
-
+  tiltPivot.add(mesh);
   mesh.position.x = body.distance;
   mesh.rotation.z = THREE.MathUtils.degToRad(body.tiltDeg);
   orbit.add(mesh);
@@ -191,11 +294,13 @@ const planets = bodies.map((body) => {
     ring.rotation.x = Math.PI / 2;
     mesh.add(ring);
   }
+  const axisLine = new THREE.AxesHelper(body.radius * 2.2);
+  mesh.add(axisLine);
 
   const orbitRing = new THREE.Mesh(
     new THREE.RingGeometry(body.distance - 0.13, body.distance + 0.13, 256),
     new THREE.MeshBasicMaterial({
-      color: 0xfd85aa,
+      color: 0x8d85aa,
 
       side: THREE.DoubleSide,
       transparent: true,
@@ -222,6 +327,7 @@ const planets = bodies.map((body) => {
   return {
     body,
     orbit,
+    tiltPivot,
     mesh,
     orbitRing,
     label,
@@ -306,6 +412,10 @@ toggleLabelsInput.addEventListener("change", () => {
     planet.label.style.display = visible ? "block" : "none";
   });
 });
+const lightModeInput = document.getElementById("lightMode");
+lightModeInput.addEventListener("change", () => {
+  applyLightPreset(lightModeInput.value);
+});
 
 dateInput.addEventListener("change", () => {
   if (!dateInput.value) return;
@@ -382,6 +492,43 @@ function projectLabel(planet) {
   planet.label.style.top = `${y}px`;
 }
 
+function applyLightPreset(mode = "normal") {
+  console.log(`Applying light preset: ${mode}`);
+  const preset = LIGHT_PRESETS[mode] || LIGHT_PRESETS.normal;
+  // const presetEmit = emissivePreset[mode] || emissivePreset.normal;
+
+  sunLight.intensity = preset.sunIntensity;
+  sunLight.decay = preset.sunLightDecay;
+  sunLight.color.setHex(preset.sunLightColor);
+  ambient.intensity = preset.ambientIntensity;
+  ambient.color.setHex(preset.ambientColor);
+  cameraFillLight.intensity = preset.cameraFillIntensity;
+  cameraFillLight.color.setHex(preset.cameraFillColor);
+  console.log(
+    preset.sunIntensity,
+    preset.ambientIntensity,
+    preset.cameraFillIntensity,
+  );
+  planets.forEach((planet) => {
+    const material = planet.mesh.material;
+    if (material instanceof THREE.MeshStandardMaterial) {
+      // material.emissiveIntensity = LIGHT_PRESETS.emissiveBoost[mode];
+      // material.emissive.setHex(LIGHT_PRESETS.emissiveColor[mode]);
+
+      console.log(
+        `Applying emissive boost: ${preset.emissiveBoost} to ${planet.body.name}`,
+      );
+      console.log(
+        `Applying emissive color: ${preset.emissiveColor} to ${planet.body.name}`,
+      );
+      material.emissiveIntensity =
+        preset.emissiveBoost + planet.body.distance / 20;
+      material.emissive.setHex(preset.emissiveColor);
+    }
+  });
+  //material.emissiveIntensity = presetEmit.emissiveBoost;
+}
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -397,6 +544,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+applyLightPreset("normal");
 animate();
 
 window.addEventListener("resize", () => {

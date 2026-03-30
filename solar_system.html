@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Solar System • Three.js</title>
     <link rel="icon" href="./images/favicon1.ico" />
-    <link rel="stylesheet" href="./systeme_solaire.css" />
+    <link rel="stylesheet" href="./solar_system.css" />
   </head>
   <body>
     <div id="app">
       <canvas id="scene"></canvas>
+      <div class="top-right-ui">
+        <div id="dateBadge" class="date-badge"></div>
+      </div>
 
-      <aside class="panel" aria-label="Simulation controls">
+      <aside class="left-drawer" aria-label="Simulation controls">
         <h1>Solar System</h1>
 
         <label class="control">
@@ -54,12 +57,41 @@
           <input id="toggleLabels" type="checkbox" checked />
           <span>Show labels</span>
         </label>
+        <label class="control">
+          <select id="lightMode">
+            <option value="normal">Normal</option>
+            <option value="boost">Boost</option>
+            <option value="cinematic">Cinematic</option>
+          </select></label
+        >
 
         <p class="hint">Drag to orbit the camera, scroll to zoom.</p>
       </aside>
+      // The planet info drawer is initially empty and hidden. It will be
+      populated and shown when a planet is selected.
+      <aside id="planetInfoDrawer" class="planet-info-drawer is-empty">
+        <div class="planet-info-handle">
+          <span>Planet Info</span>
+        </div>
 
-      <div id="dateBadge" class="date-badge"></div>
+        <div class="planet-info-card">
+          <div class="planet-info-header">
+            <p class="planet-info-kicker">Selected object</p>
+            <h2 id="planetInfoName" class="planet-info-title">No selection</h2>
+            <p id="planetInfoType" class="planet-info-subtitle">
+              Select a planet to view information
+            </p>
+          </div>
+
+          <div id="planetInfoBody" class="planet-info-body">
+            <div class="planet-info-empty">
+              Select a planet to view information
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
+
     <script type="importmap">
       {
         "imports": {
@@ -68,6 +100,6 @@
       }
     </script>
 
-    <script type="module" src="./systeme_solaire.js"></script>
+    <script type="module" src="./solar_system.js"></script>
   </body>
 </html>
