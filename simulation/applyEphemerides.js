@@ -20,6 +20,7 @@ export function applyEphemerides({
   animatedObjects,
   supportedBodyNames,
   auToSceneDistanceScale,
+  minSceneDistance = 0,
   longitudeOffsetDeg = 0,
   logger = console,
 }) {
@@ -70,7 +71,10 @@ export function applyEphemerides({
     }
 
     const orbitAngle = degToRad(ephemeris.longitudeDeg + longitudeOffsetDeg);
-    const sceneDistance = ephemeris.radiusAu * auToSceneDistanceScale;
+    // const sceneDistance = ephemeris.radiusAu * auToSceneDistanceScale;
+    const sceneDistance =
+      minSceneDistance +
+      Math.log1p(ephemeris.radiusAu) * auToSceneDistanceScale;
 
     registryEntry.orbitAngle = orbitAngle;
     registryEntry.orbit.rotation.y = orbitAngle;

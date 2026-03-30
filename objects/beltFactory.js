@@ -1,5 +1,15 @@
+function auToSceneDistance(radiusAu, scale, minDistance) {
+  return minDistance + Math.log1p(radiusAu) * scale;
+}
+
 export function createBeltObject(obj, preset, deps) {
-  const { THREE, group, objectRegistry } = deps;
+  const {
+    THREE,
+    group,
+    objectRegistry,
+    logDistanceScale = 70,
+    minSceneDistance = 8,
+  } = deps;
 
   const orbit = new THREE.Object3D();
   group.add(orbit);
@@ -16,13 +26,27 @@ export function createBeltObject(obj, preset, deps) {
     emissiveIntensity: preset.beltEmissiveBoost,
   });
 
+  const innerRadius = auToSceneDistance(
+    obj.innerAu ?? 2.2,
+    logDistanceScale,
+    minSceneDistance,
+  );
+
+  const outerRadius = auToSceneDistance(
+    obj.outerAu ?? 3.2,
+    logDistanceScale,
+    minSceneDistance,
+  );
+
   for (let i = 0; i < obj.count; i++) {
     const angle = Math.random() * Math.PI * 2;
+
     const radius = THREE.MathUtils.lerp(
-      obj.innerRadius,
-      obj.outerRadius,
+      innerRadius,
+      outerRadius,
       Math.random(),
     );
+
     const y = (Math.random() - 0.5) * obj.thickness;
 
     const asteroid = new THREE.Mesh(asteroidGeometry, beltMaterial);
@@ -49,6 +73,8 @@ export function createBeltObject(obj, preset, deps) {
     group: beltGroup,
     material: beltMaterial,
     orbitAngle: Math.random() * Math.PI * 2,
+    innerRadius,
+    outerRadius,
   };
 
   objectRegistry.set(obj.name, entry);

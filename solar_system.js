@@ -40,7 +40,7 @@ import {
   textureLoader,
 } from "./core/sceneSetup.js";
 
-const MIRIade_PHASE1_BODIES = [
+const MIRIADE_SUPPORTED_BODIES = [
   "Mercury",
   "Venus",
   "Earth",
@@ -52,8 +52,11 @@ const MIRIade_PHASE1_BODIES = [
   "Neptune",
   "Pluto",
 ];
-const MIRIade_AU_TO_SCENE_DISTANCE = 30;
-const MIRIade_LONGITUDE_OFFSET_DEG = 0;
+//const MIRIade_AU_TO_SCENE_DISTANCE = 30;
+const MIRIADE_LOG_DISTANCE_SCALE = 70;
+const MIRIADE_MIN_SCENE_DISTANCE = 8;
+//const MIRIade_LONGITUDE_OFFSET_DEG = 0;
+const MIRIADE_LONGITUDE_OFFSET_DEG = 0;
 
 const dateInput = document.getElementById("dateInput");
 const speedInput = document.getElementById("speed");
@@ -170,7 +173,7 @@ async function refreshMiriadeEphemerides(dateStr) {
   try {
     const ephemerides = await fetchEphemeridesForBodies(
       dateStr,
-      MIRIade_PHASE1_BODIES,
+      MIRIADE_SUPPORTED_BODIES,
     );
 
     if (requestToken !== miriadeState.requestToken) {
@@ -184,13 +187,24 @@ async function refreshMiriadeEphemerides(dateStr) {
       ephemerides,
     );
 
+    /*   applyEphemerides({
+      ephemerides,
+      objectRegistry,
+      animatedObjects,
+      supportedBodyNames: MIRIADE_SUPPORTED_BODIES,
+      auToSceneDistanceScale: MIRIade_AU_TO_SCENE_DISTANCE,
+      longitudeOffsetDeg: MIRIade_LONGITUDE_OFFSET_DEG,
+      logger: console,
+    }); */
+
     applyEphemerides({
       ephemerides,
       objectRegistry,
       animatedObjects,
-      supportedBodyNames: MIRIade_PHASE1_BODIES,
-      auToSceneDistanceScale: MIRIade_AU_TO_SCENE_DISTANCE,
-      longitudeOffsetDeg: MIRIade_LONGITUDE_OFFSET_DEG,
+      supportedBodyNames: MIRIADE_SUPPORTED_BODIES,
+      auToSceneDistanceScale: MIRIADE_LOG_DISTANCE_SCALE,
+      minSceneDistance: MIRIADE_MIN_SCENE_DISTANCE,
+      longitudeOffsetDeg: MIRIADE_LONGITUDE_OFFSET_DEG,
       logger: console,
     });
   } catch (error) {
@@ -241,6 +255,8 @@ solarObjects.forEach((obj) => {
       THREE,
       group,
       objectRegistry,
+      logDistanceScale: MIRIADE_LOG_DISTANCE_SCALE,
+      minSceneDistance: MIRIADE_MIN_SCENE_DISTANCE,
     });
   }
 });

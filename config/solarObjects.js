@@ -55,7 +55,7 @@ export const solarObjects = [
     hasOrbitRing: true,
     hasLabel: true,
   },
-  {
+  /*   {
     name: "Asteroid Belt",
     kind: "belt",
     visualRole: "belt",
@@ -67,7 +67,21 @@ export const solarObjects = [
     color: 0x8f8476,
     hasOrbitRing: false,
     hasLabel: false,
+  }, */
+  {
+    name: "Asteroid Belt",
+    kind: "belt",
+    visualRole: "belt",
+    innerAu: 2.2,
+    outerAu: 3.2,
+    thickness: 1.8,
+    count: 900,
+    yearDays: 1800,
+    color: 0x8f8476,
+    hasOrbitRing: false,
+    hasLabel: false,
   },
+
   {
     name: "Ceres",
     kind: "dwarf",
