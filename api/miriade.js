@@ -196,7 +196,7 @@ export function dmsToDeg(value) {
 
 export async function fetchBodyEphemeris(name, dateStr) {
   const url = buildMiriadeUrl(name, dateStr);
-  console.log("[Miriade URL]", url);
+  //console.log("[Miriade URL]", url);
 
   const response = await fetch(url, {
     headers: {

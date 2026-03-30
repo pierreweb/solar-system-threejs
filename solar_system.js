@@ -41,6 +41,8 @@ import {
 } from "./core/sceneSetup.js";
 
 const MIRIade_PHASE1_BODIES = ["Mercury", "Venus", "Earth", "Mars"];
+const MIRIade_AU_TO_SCENE_DISTANCE = 30;
+const MIRIade_LONGITUDE_OFFSET_DEG = 0;
 
 const dateInput = document.getElementById("dateInput");
 const speedInput = document.getElementById("speed");
@@ -175,6 +177,9 @@ async function refreshMiriadeEphemerides(dateStr) {
       ephemerides,
       objectRegistry,
       animatedObjects,
+      supportedBodyNames: MIRIade_PHASE1_BODIES,
+      auToSceneDistanceScale: MIRIade_AU_TO_SCENE_DISTANCE,
+      longitudeOffsetDeg: MIRIade_LONGITUDE_OFFSET_DEG,
       logger: console,
     });
   } catch (error) {
