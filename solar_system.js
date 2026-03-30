@@ -22,6 +22,10 @@ import {
 } from "./objects/materials.js";
 import { createLabel, projectLabel } from "./objects/labels.js";
 import { createOrbitRing } from "./objects/orbitRings.js";
+import { createPlanetObject } from "./objects/planetFactory.js";
+import { createRingObject } from "./objects/ringFactory.js";
+import { createBeltObject } from "./objects/beltFactory.js";
+import { createMoonForEarth } from "./objects/moonFactory.js";
 import {
   renderer,
   scene,
@@ -130,192 +134,6 @@ function updateSpeed() {
   }
 }
 
-function createPlanetObject(obj, preset) {
-  const orbit = new THREE.Object3D();
-  group.add(orbit);
-
-  const tiltPivot = new THREE.Object3D();
-  tiltPivot.position.x = obj.distance;
-  tiltPivot.rotation.z = THREE.MathUtils.degToRad(obj.tiltDeg || 0);
-  orbit.add(tiltPivot);
-
-  const material = createPlanetLikeMaterial(obj, preset, { textureLoader });
-
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(obj.radius, 32, 32),
-    material,
-  );
-
-  tiltPivot.add(mesh);
-
-  mesh.userData.bodyName = obj.name;
-  mesh.userData.clickable = true;
-  clickableMeshes.push(mesh);
-
-  if (SHOW_AXES_HELPER) {
-    const axisLine = new THREE.AxesHelper(obj.radius * 2.2);
-    mesh.add(axisLine);
-  }
-
-  const orbitRing = obj.hasOrbitRing
-    ? createOrbitRing(obj.distance, { group, orbitRingObjects })
-    : null;
-  const label = obj.hasLabel
-    ? createLabel(obj.name, { toggleLabelsInput })
-    : null;
-
-  const entry = {
-    ...obj,
-    orbit,
-    tiltPivot,
-    mesh,
-    orbitRing,
-    label,
-    moon: null,
-    orbitAngle: Math.random() * Math.PI * 2,
-    selfRotationAngle: Math.random() * Math.PI * 2,
-  };
-
-  objectRegistry.set(obj.name, entry);
-  animatedObjects.push(entry);
-  labelObjects.push(entry);
-
-  return entry;
-}
-
-function createRingObject(obj, preset) {
-  const parent = objectRegistry.get(obj.parentName);
-  if (!parent) {
-    console.warn(`Parent not found for ring: ${obj.name}`);
-    return null;
-  }
-
-  const ringTexture = obj.texture ? textureLoader.load(obj.texture) : null;
-
-  const ringMaterial = new THREE.MeshStandardMaterial({
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: preset.ringOpacity,
-    map: ringTexture,
-    emissiveMap: ringTexture,
-    roughness: 1,
-    metalness: 1,
-    color: obj.color ?? preset.ringTint,
-    emissiveIntensity: preset.ringEmissiveBoost,
-    emissive: preset.ringEmissiveColor,
-  });
-
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(obj.innerRadius, obj.outerRadius, 96),
-    ringMaterial,
-  );
-  ring.rotation.x = Math.PI / 2;
-  parent.mesh.add(ring);
-
-  const entry = {
-    ...obj,
-    mesh: ring,
-    parent,
-  };
-
-  objectRegistry.set(obj.name, entry);
-  return entry;
-}
-
-function createBeltObject(obj, preset) {
-  const orbit = new THREE.Object3D();
-  group.add(orbit);
-
-  const beltGroup = new THREE.Group();
-  orbit.add(beltGroup);
-
-  const asteroidGeometry = new THREE.IcosahedronGeometry(0.12, 0);
-  const beltMaterial = new THREE.MeshStandardMaterial({
-    color: preset.beltTint,
-    roughness: 1,
-    metalness: 0,
-    emissive: preset.beltEmissiveColor,
-    emissiveIntensity: preset.beltEmissiveBoost,
-  });
-
-  for (let i = 0; i < obj.count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const radius = THREE.MathUtils.lerp(
-      obj.innerRadius,
-      obj.outerRadius,
-      Math.random(),
-    );
-    const y = (Math.random() - 0.5) * obj.thickness;
-
-    const asteroid = new THREE.Mesh(asteroidGeometry, beltMaterial);
-    asteroid.position.set(
-      Math.cos(angle) * radius,
-      y,
-      Math.sin(angle) * radius,
-    );
-    asteroid.rotation.set(
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-    );
-
-    const scale = THREE.MathUtils.lerp(0.7, 2.2, Math.random());
-    asteroid.scale.setScalar(scale);
-
-    beltGroup.add(asteroid);
-  }
-
-  const entry = {
-    ...obj,
-    orbit,
-    group: beltGroup,
-    material: beltMaterial,
-    orbitAngle: Math.random() * Math.PI * 2,
-  };
-
-  objectRegistry.set(obj.name, entry);
-  asteroidBeltEntry = entry;
-  return entry;
-}
-
-function createMoonForEarth(preset) {
-  const earth = objectRegistry.get("Earth");
-  if (!earth) return;
-
-  const moonOrbit = new THREE.Object3D();
-  earth.mesh.add(moonOrbit);
-
-  const moonTexture = textureLoader.load("./textures/2k_moon.jpg");
-  const moonMaterial = new THREE.MeshStandardMaterial({
-    map: moonTexture,
-    emissive: preset.moonEmissiveColor,
-    emissiveMap: moonTexture,
-    emissiveIntensity: preset.moonEmissiveBoost,
-    roughness: 1,
-    metalness: 0,
-  });
-
-  const moon = new THREE.Mesh(
-    new THREE.SphereGeometry(0.75, 24, 24),
-    moonMaterial,
-  );
-
-  moon.position.x = 5.5;
-  moonOrbit.add(moon);
-
-  earth.moon = {
-    name: "Moon",
-    visualRole: "moon",
-    orbit: moonOrbit,
-    mesh: moon,
-    material: moonMaterial,
-    orbitAngle: 0,
-    selfRotationAngle: 0,
-    yearDays: MOON_ORBIT_DAYS,
-    dayHours: MOON_ROTATION_DAYS * 24,
-  };
-}
-
 function applyLightPreset(mode = "normal") {
   const preset = LIGHT_PRESETS[mode] || LIGHT_PRESETS.normal;
 
@@ -419,23 +237,51 @@ function updateCelestialPositions(deltaSeconds) {
 
 solarObjects.forEach((obj) => {
   if (obj.kind === "planet" || obj.kind === "dwarf") {
-    createPlanetObject(obj, LIGHT_PRESETS.normal);
+    createPlanetObject(obj, LIGHT_PRESETS.normal, {
+      THREE,
+      group,
+      objectRegistry,
+      animatedObjects,
+      labelObjects,
+      clickableMeshes,
+      createPlanetLikeMaterial,
+      createOrbitRing,
+      createLabel,
+      textureLoader,
+      toggleLabelsInput,
+      orbitRingObjects,
+      SHOW_AXES_HELPER,
+    });
   }
 });
 
 solarObjects.forEach((obj) => {
   if (obj.kind === "ring") {
-    createRingObject(obj, LIGHT_PRESETS.normal);
+    createRingObject(obj, LIGHT_PRESETS.normal, {
+      THREE,
+      objectRegistry,
+      textureLoader,
+    });
   }
 });
 
 solarObjects.forEach((obj) => {
   if (obj.kind === "belt") {
-    createBeltObject(obj, LIGHT_PRESETS.normal);
+    asteroidBeltEntry = createBeltObject(obj, LIGHT_PRESETS.normal, {
+      THREE,
+      group,
+      objectRegistry,
+    });
   }
 });
 
-createMoonForEarth(LIGHT_PRESETS.normal);
+createMoonForEarth(LIGHT_PRESETS.normal, {
+  THREE,
+  objectRegistry,
+  textureLoader,
+  MOON_ORBIT_DAYS,
+  MOON_ROTATION_DAYS,
+});
 
 speedInput?.addEventListener("input", updateSpeed);
 
@@ -585,4 +431,3 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
